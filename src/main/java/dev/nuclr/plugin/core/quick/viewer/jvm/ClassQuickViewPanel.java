@@ -25,8 +25,8 @@ import org.jetbrains.java.decompiler.main.decompiler.BaseDecompiler;
 import org.jetbrains.java.decompiler.main.extern.IFernflowerLogger;
 import org.jetbrains.java.decompiler.main.extern.IResultSaver;
 
+import dev.nuclr.plugin.PluginPathResource;
 import dev.nuclr.plugin.PluginTheme;
-import dev.nuclr.plugin.QuickViewItem;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -98,14 +98,14 @@ public class ClassQuickViewPanel extends JPanel {
 	 * @return {@code true} if this provider handled the item (success or error
 	 *         message), {@code false} if the item should not be shown here
 	 */
-	public boolean load(QuickViewItem item, AtomicBoolean cancelled) {
+	public boolean load(PluginPathResource item, AtomicBoolean cancelled) {
 		if (cancelled.get()) return false;
 
 		String content;
 		try {
 			content = decompile(item);
 		} catch (Exception e) {
-			log.error("Failed to decompile: {}", item.name(), e);
+			log.error("Failed to decompile: {}", item.getName(), e);
 			showMessage("// Decompilation failed: " + e.getMessage(), cancelled);
 			return true;
 		}
@@ -131,11 +131,11 @@ public class ClassQuickViewPanel extends JPanel {
 
 	// ── Internals ─────────────────────────────────────────────────────────────
 
-	private String decompile(QuickViewItem item) throws Exception {
+	private String decompile(PluginPathResource item) throws Exception {
 		Path tempDir = Files.createTempDirectory("nuclr-jvm-");
 		try {
 			byte[] classBytes;
-			Path sourcePath = item.path();
+			Path sourcePath = item.getPath();
 			if (sourcePath != null) {
 				classBytes = Files.readAllBytes(sourcePath);
 			} else {
@@ -144,7 +144,7 @@ public class ClassQuickViewPanel extends JPanel {
 				}
 			}
 
-			Path tempClass = tempDir.resolve(item.name());
+			Path tempClass = tempDir.resolve(item.getName());
 			Files.write(tempClass, classBytes);
 
 			var saver = new StringResultSaver();
