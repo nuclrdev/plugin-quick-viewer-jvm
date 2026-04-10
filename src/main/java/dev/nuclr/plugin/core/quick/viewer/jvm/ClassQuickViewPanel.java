@@ -25,8 +25,8 @@ import org.jetbrains.java.decompiler.main.decompiler.BaseDecompiler;
 import org.jetbrains.java.decompiler.main.extern.IFernflowerLogger;
 import org.jetbrains.java.decompiler.main.extern.IResultSaver;
 
-import dev.nuclr.plugin.PluginPathResource;
-import dev.nuclr.plugin.PluginTheme;
+import dev.nuclr.platform.NuclrThemeScheme;
+import dev.nuclr.platform.plugin.NuclrResourcePath;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -64,7 +64,7 @@ public class ClassQuickViewPanel extends JPanel {
 		add(scroll, BorderLayout.CENTER);
 	}
 
-	public void applyTheme(PluginTheme theme) {
+	public void applyTheme(NuclrThemeScheme theme) {
 		if (theme == null) {
 			return;
 		}
@@ -98,7 +98,7 @@ public class ClassQuickViewPanel extends JPanel {
 	 * @return {@code true} if this provider handled the item (success or error
 	 *         message), {@code false} if the item should not be shown here
 	 */
-	public boolean load(PluginPathResource item, AtomicBoolean cancelled) {
+	public boolean load(NuclrResourcePath item, AtomicBoolean cancelled) {
 		if (cancelled.get()) return false;
 
 		String content;
@@ -131,7 +131,7 @@ public class ClassQuickViewPanel extends JPanel {
 
 	// ── Internals ─────────────────────────────────────────────────────────────
 
-	private String decompile(PluginPathResource item) throws Exception {
+	private String decompile(NuclrResourcePath item) throws Exception {
 		Path tempDir = Files.createTempDirectory("nuclr-jvm-");
 		try {
 			byte[] classBytes;

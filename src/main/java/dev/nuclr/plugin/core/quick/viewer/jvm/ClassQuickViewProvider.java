@@ -1,98 +1,75 @@
 package dev.nuclr.plugin.core.quick.viewer.jvm;
 
-import java.io.InputStream;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.swing.JComponent;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-
-import dev.nuclr.plugin.ApplicationPluginContext;
-import dev.nuclr.plugin.MenuResource;
-import dev.nuclr.plugin.PluginManifest;
-import dev.nuclr.plugin.PluginPathResource;
-import dev.nuclr.plugin.PluginTheme;
-import dev.nuclr.plugin.QuickViewProviderPlugin;
-import dev.nuclr.plugin.event.PluginEvent;
-import dev.nuclr.plugin.event.PluginThemeUpdatedEvent;
-import dev.nuclr.plugin.event.bus.PluginEventListener;
+import dev.nuclr.platform.NuclrThemeScheme;
+import dev.nuclr.platform.plugin.NuclrMenuResource;
+import dev.nuclr.platform.plugin.NuclrPlugin;
+import dev.nuclr.platform.plugin.NuclrPluginContext;
+import dev.nuclr.platform.plugin.NuclrResourcePath;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class ClassQuickViewProvider implements QuickViewProviderPlugin, PluginEventListener {
+public class ClassQuickViewProvider implements NuclrPlugin {
 
-	private ApplicationPluginContext context;
+	private static final String THEME_UPDATED_EVENT_TYPE = "dev.nuclr.platform.theme.updated";
+
+	private NuclrPluginContext context;
 	private ClassQuickViewPanel panel;
 	private volatile AtomicBoolean currentCancelled;
-	private PluginTheme theme;
 
 	@Override
-	public PluginManifest getPluginInfo() {
-		ObjectMapper objectMapper = context != null ? context.getObjectMapper() : new ObjectMapper();
-		try (InputStream is = getClass().getResourceAsStream("/plugin.json")) {
-			if (is != null) {
-				return objectMapper.readValue(is, PluginManifest.class);
-			}
-		} catch (Exception e) {
-			log.error("Error reading /plugin.json for ClassQuickViewProvider", e);
-		}
-		return null;
-	}
-
-	@Override
-	public JComponent getPanel() {
+	public JComponent panel() {
 		if (panel == null) {
 			panel = new ClassQuickViewPanel();
-			panel.applyTheme(theme);
+			panel.applyTheme(context.getTheme());
 		}
 		return panel;
 	}
 
 	@Override
-	public List<MenuResource> getMenuItems(PluginPathResource source) {
+	public List<NuclrMenuResource> menuItems(NuclrResourcePath source) {
 		return List.of();
 	}
 
 	@Override
-	public void load(ApplicationPluginContext context) {
+	public void load(NuclrPluginContext context) {
 		this.context = context;
-		context.getEventBus().subscribe(this);
-		applyTheme(resolveTheme(context));
+		applyTheme(context.getTheme());
 	}
 
 	@Override
 	public void unload() {
-		closeItem();
-		if (context != null) {
-			context.getEventBus().unsubscribe(this);
-		}
+		closeResource();
 		panel = null;
 		context = null;
 	}
 
 	@Override
-	public boolean supports(PluginPathResource resource) {
+	public boolean supports(NuclrResourcePath resource) {
 		return resource != null && "class".equalsIgnoreCase(resource.getExtension());
 	}
 
 	@Override
-	public int getPriority() {
+	public int priority() {
 		return 1;
 	}
 
 	@Override
-	public boolean openItem(PluginPathResource resource, AtomicBoolean cancelled) {
+	public boolean openResource(NuclrResourcePath resource, AtomicBoolean cancelled) {
 		if (currentCancelled != null) {
 			currentCancelled.set(true);
 		}
 		currentCancelled = cancelled;
-		getPanel();
+		panel();
 		return panel.load(resource, cancelled);
 	}
 
 	@Override
-	public void closeItem() {
+	public void closeResource() {
 		if (currentCancelled != null) {
 			currentCancelled.set(true);
 			currentCancelled = null;
@@ -102,43 +79,91 @@ public class ClassQuickViewProvider implements QuickViewProviderPlugin, PluginEv
 		}
 	}
 
-	public void applyTheme(PluginTheme theme) {
-		this.theme = theme;
+	public void applyTheme(NuclrThemeScheme theme) {
 		if (panel != null) {
 			panel.applyTheme(theme);
 		}
 	}
 
 	@Override
-	public boolean isMessageSupported(PluginEvent msg) {
-		return msg instanceof PluginThemeUpdatedEvent;
-	}
-
-	@Override
-	public void handleMessage(PluginEvent e) {
-		if (e instanceof PluginThemeUpdatedEvent) {
-			applyTheme(resolveTheme(context));
-		}
-	}
-
-	@Override
-	public void onFocusGained() {
-		// Quick view providers do not need focus-specific behavior.
+	public boolean onFocusGained() {
+		return false;
 	}
 
 	@Override
 	public void onFocusLost() {
-		// Quick view providers do not need focus-specific behavior.
 	}
 
-	private static PluginTheme resolveTheme(ApplicationPluginContext context) {
-		if (context == null) {
-			return null;
-		}
-		Object theme = context.getGlobalData().get("pluginTheme");
-		if (theme instanceof PluginTheme pluginTheme) {
-			return pluginTheme;
-		}
+	@Override
+	public boolean isFocused() {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public String id() {
+		// TODO Auto-generated method stub
 		return null;
 	}
+
+	@Override
+	public String name() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public String version() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public String description() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public String author() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public String license() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public String website() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public String pageUrl() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public String docUrl() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Developer type() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public void updateTheme(NuclrThemeScheme themeScheme) {
+		// TODO Auto-generated method stub
+		
+	}
+
 }
