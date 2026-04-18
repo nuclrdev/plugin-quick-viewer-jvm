@@ -9,17 +9,17 @@ import dev.nuclr.platform.NuclrThemeScheme;
 import dev.nuclr.platform.plugin.NuclrMenuResource;
 import dev.nuclr.platform.plugin.NuclrPlugin;
 import dev.nuclr.platform.plugin.NuclrPluginContext;
+import dev.nuclr.platform.plugin.NuclrPluginRole;
 import dev.nuclr.platform.plugin.NuclrResourcePath;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class ClassQuickViewProvider implements NuclrPlugin {
-
-	private static final String THEME_UPDATED_EVENT_TYPE = "dev.nuclr.platform.theme.updated";
+public class ClassQuickViewPlugin implements NuclrPlugin {
 
 	private NuclrPluginContext context;
 	private ClassQuickViewPanel panel;
 	private volatile AtomicBoolean currentCancelled;
+	private NuclrResourcePath currentResource;
 
 	@Override
 	public JComponent panel() {
@@ -63,6 +63,7 @@ public class ClassQuickViewProvider implements NuclrPlugin {
 		if (currentCancelled != null) {
 			currentCancelled.set(true);
 		}
+		this.currentResource = resource;
 		currentCancelled = cancelled;
 		panel();
 		return panel.load(resource, cancelled);
@@ -162,6 +163,21 @@ public class ClassQuickViewProvider implements NuclrPlugin {
 	@Override
 	public void updateTheme(NuclrThemeScheme themeScheme) {
 
+	}
+
+	@Override
+	public NuclrPluginRole role() {
+		return NuclrPluginRole.QuickViewer;
+	}
+
+	@Override
+	public NuclrResourcePath getCurrentResource() {
+		return currentResource;
+	}
+
+	@Override
+	public String uuid() {
+		return id();
 	}
 
 }
