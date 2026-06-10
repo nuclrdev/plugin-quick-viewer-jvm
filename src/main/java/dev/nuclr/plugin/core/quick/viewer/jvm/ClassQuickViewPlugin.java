@@ -1,25 +1,25 @@
 package dev.nuclr.plugin.core.quick.viewer.jvm;
 
-import java.util.List;
+import java.nio.file.Path;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.swing.JComponent;
 
+import org.apache.commons.io.FilenameUtils;
+
 import dev.nuclr.platform.NuclrThemeScheme;
-import dev.nuclr.platform.plugin.NuclrMenuResource;
-import dev.nuclr.platform.plugin.NuclrPlugin;
 import dev.nuclr.platform.plugin.NuclrPluginContext;
-import dev.nuclr.platform.plugin.NuclrPluginRole;
-import dev.nuclr.platform.plugin.NuclrResourcePath;
+import dev.nuclr.platform.plugin.NuclrResource;
+import dev.nuclr.platform.plugin.QuickViewNuclrPlugin;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class ClassQuickViewPlugin implements NuclrPlugin {
+public class ClassQuickViewPlugin implements QuickViewNuclrPlugin {
 
 	private NuclrPluginContext context;
 	private ClassQuickViewPanel panel;
 	private volatile AtomicBoolean currentCancelled;
-	private NuclrResourcePath currentResource;
+	private NuclrResource currentResource;
 
 	@Override
 	public JComponent panel() {
@@ -31,14 +31,18 @@ public class ClassQuickViewPlugin implements NuclrPlugin {
 	}
 
 	@Override
-	public List<NuclrMenuResource> menuItems(NuclrResourcePath source) {
-		return List.of();
+	public void preinit(NuclrPluginContext context) {
+		this.context = context;
+		applyTheme(context.getTheme());
 	}
 
 	@Override
-	public void load(NuclrPluginContext context, boolean isTemplate) {
-		this.context = context;
-		applyTheme(context.getTheme());
+	public void init() {
+	}
+
+	@Override
+	public NuclrPluginContext getContext() {
+		return this.context;
 	}
 
 	@Override
@@ -49,8 +53,13 @@ public class ClassQuickViewPlugin implements NuclrPlugin {
 	}
 
 	@Override
-	public boolean supports(NuclrResourcePath resource) {
-		return resource != null && "class".equalsIgnoreCase(resource.getExtension());
+	public boolean supports(Path path) {
+		return path != null && "class".equalsIgnoreCase(extension(path));
+	}
+
+	private static String extension(Path path) {
+		var name = path.getFileName() != null ? path.getFileName().toString() : path.toString();
+		return FilenameUtils.getExtension(name);
 	}
 
 	@Override
@@ -59,7 +68,7 @@ public class ClassQuickViewPlugin implements NuclrPlugin {
 	}
 
 	@Override
-	public boolean openResource(NuclrResourcePath resource, AtomicBoolean cancelled) {
+	public boolean openResource(NuclrResource resource, AtomicBoolean cancelled) {
 		if (currentCancelled != null) {
 			currentCancelled.set(true);
 		}
@@ -102,7 +111,7 @@ public class ClassQuickViewPlugin implements NuclrPlugin {
 
 	private String name = "JVM Class Quick Viewer";
 	private String id = "dev.nuclr.plugin.core.quickviewer.jvm";
-	private String version = "1.0.0";
+	private final String version = loadVersion();
 	private String description = "Decompiles and previews Java .class files using Vineflower.";
 	private String author = "Nuclr Development Team";
 	private String license = "Apache-2.0";
@@ -123,6 +132,16 @@ public class ClassQuickViewPlugin implements NuclrPlugin {
 	@Override
 	public String version() {
 		return version;
+	}
+	private static String loadVersion() {
+		try (var stream = ClassQuickViewPlugin.class.getResourceAsStream("/plugin.properties")) {
+			if (stream == null) return "unknown";
+			var props = new java.util.Properties();
+			props.load(stream);
+			return props.getProperty("version", "unknown");
+		} catch (java.io.IOException e) {
+			return "unknown";
+		}
 	}
 
 	@Override
@@ -156,7 +175,7 @@ public class ClassQuickViewPlugin implements NuclrPlugin {
 	}
 
 	@Override
-	public Developer type() {
+	public Developer developer() {
 		return Developer.Official;
 	}
 
@@ -166,12 +185,7 @@ public class ClassQuickViewPlugin implements NuclrPlugin {
 	}
 
 	@Override
-	public NuclrPluginRole role() {
-		return NuclrPluginRole.QuickViewer;
-	}
-
-	@Override
-	public NuclrResourcePath getCurrentResource() {
+	public NuclrResource getCurrentResource() {
 		return currentResource;
 	}
 

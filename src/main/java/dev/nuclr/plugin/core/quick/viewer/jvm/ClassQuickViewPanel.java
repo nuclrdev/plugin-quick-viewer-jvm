@@ -26,7 +26,7 @@ import org.jetbrains.java.decompiler.main.extern.IFernflowerLogger;
 import org.jetbrains.java.decompiler.main.extern.IResultSaver;
 
 import dev.nuclr.platform.NuclrThemeScheme;
-import dev.nuclr.platform.plugin.NuclrResourcePath;
+import dev.nuclr.platform.plugin.NuclrResource;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -98,7 +98,7 @@ public class ClassQuickViewPanel extends JPanel {
 	 * @return {@code true} if this provider handled the item (success or error
 	 *         message), {@code false} if the item should not be shown here
 	 */
-	public boolean load(NuclrResourcePath item, AtomicBoolean cancelled) {
+	public boolean load(NuclrResource item, AtomicBoolean cancelled) {
 		if (cancelled.get()) return false;
 
 		String content;
@@ -131,7 +131,7 @@ public class ClassQuickViewPanel extends JPanel {
 
 	// ── Internals ─────────────────────────────────────────────────────────────
 
-	private String decompile(NuclrResourcePath item) throws Exception {
+	private String decompile(NuclrResource item) throws Exception {
 		Path tempDir = Files.createTempDirectory("nuclr-jvm-");
 		try {
 			byte[] classBytes;
@@ -139,7 +139,7 @@ public class ClassQuickViewPanel extends JPanel {
 			if (sourcePath != null) {
 				classBytes = Files.readAllBytes(sourcePath);
 			} else {
-				try (var in = item.openStream()) {
+				try (var in = Files.newInputStream(item.getPath())) {
 					classBytes = in.readAllBytes();
 				}
 			}
