@@ -194,7 +194,7 @@ public class ClassQuickViewPlugin implements QuickViewNuclrPlugin {
 
 	@Override
 	public void updateTheme(NuclrThemeScheme themeScheme) {
-
+		applyTheme(themeScheme);
 	}
 
 	@Override

@@ -14,6 +14,7 @@ import java.util.jar.Manifest;
 
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
 import javax.swing.text.BadLocationException;
 
 import org.fife.ui.rsyntaxtextarea.RSyntaxDocument;
@@ -40,14 +41,7 @@ public class ClassQuickViewPanel extends JPanel {
 
 		textArea = new RSyntaxTextArea();
 
-		try (InputStream themeIn = getClass()
-				.getResourceAsStream("/org/fife/ui/rsyntaxtextarea/themes/dark.xml")) {
-			if (themeIn != null) {
-				Theme.load(themeIn).apply(textArea);
-			}
-		} catch (IOException e) {
-			log.warn("Could not load RSyntaxTextArea dark theme", e);
-		}
+		loadSyntaxTheme(true);
 
 		textArea.setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_JAVA);
 		textArea.setFont(new Font("JetBrains Mono", Font.PLAIN, 13));
@@ -65,16 +59,28 @@ public class ClassQuickViewPanel extends JPanel {
 	}
 
 	public void applyTheme(NuclrThemeScheme theme) {
-		if (theme == null) {
-			return;
-		}
+		// Colors come from the active look-and-feel (UIManager): the host installs
+		// the selected theme as the L&F and only overlays a scheme's *explicit*
+		// overrides on top. Built-in themes carry no color overrides, so reading
+		// solely from the scheme would yield stale defaults (e.g. black line
+		// numbers, a selection indistinguishable from the panel background).
+		Color background = uiColor(theme, "Panel.background", getBackground());
+		Color foreground = uiColor(theme, "Panel.foreground", textArea.getForeground());
 
-		Color background = theme.color("Panel.background", getBackground());
-		Color foreground = theme.color("Panel.foreground", textArea.getForeground());
-		Color selectionBackground = theme.color("Table.selectionBackground", textArea.getSelectionColor());
-		Color selectionForeground = theme.color("Table.selectionForeground", textArea.getSelectedTextColor());
-		Color gutterBackground = theme.color("TableHeader.background", background);
-		Color gutterForeground = theme.color("Label.foreground", foreground);
+		// Load the bundled RSyntax palette whose token colors match the host
+		// background luminance, so highlighting stays readable on light themes.
+		// The overrides below then nudge it to the exact host colors.
+		loadSyntaxTheme(isDark(background));
+
+		textArea.setFont(editorFont(UIManager.getFont("defaultFont")));
+		scroll.getGutter().setLineNumberFont(textArea.getFont());
+
+		Color gutterBackground = uiColor(theme, "TableHeader.background", background);
+		Color gutterForeground = uiColor(theme, "Label.foreground", foreground);
+		// Use the host's real text-selection color so the selection is clearly
+		// distinct from the panel background and tracks light/dark themes.
+		Color selectionBackground = uiColor(theme, "TextArea.selectionBackground",
+				uiColor(theme, "Table.selectionBackground", textArea.getSelectionColor()));
 
 		setBackground(background);
 		scroll.setBackground(background);
@@ -86,9 +92,8 @@ public class ClassQuickViewPanel extends JPanel {
 		textArea.setForeground(foreground);
 		textArea.setCaretColor(foreground);
 		textArea.setSelectionColor(selectionBackground);
-		textArea.setSelectedTextColor(selectionForeground);
-		textArea.setCurrentLineHighlightColor(theme.color("Table.gridColor", gutterBackground));
-		textArea.setFont(theme.defaultFont());
+		textArea.setSelectedTextColor(foreground);
+		textArea.setCurrentLineHighlightColor(blend(background, uiColor(theme, "Table.gridColor", gutterBackground), 0.35f));
 	}
 
 	/**
@@ -130,6 +135,49 @@ public class ClassQuickViewPanel extends JPanel {
 	}
 
 	// ── Internals ─────────────────────────────────────────────────────────────
+
+	private void loadSyntaxTheme(boolean dark) {
+		String resource = dark
+				? "/org/fife/ui/rsyntaxtextarea/themes/dark.xml"
+				: "/org/fife/ui/rsyntaxtextarea/themes/default.xml";
+		try (InputStream themeIn = getClass().getResourceAsStream(resource)) {
+			if (themeIn != null) {
+				Theme.load(themeIn).apply(textArea);
+			}
+		} catch (IOException e) {
+			log.warn("Could not load RSyntaxTextArea theme: {}", resource, e);
+		}
+	}
+
+	/**
+	 * Resolve a UI color, preferring the theme scheme's explicit override and
+	 * otherwise falling back to the active look-and-feel ({@link UIManager}). A
+	 * {@code fallback} guards keys the L&amp;F does not define.
+	 */
+	private static Color uiColor(NuclrThemeScheme theme, String key, Color fallback) {
+		Color lafColor = UIManager.getColor(key);
+		Color base = lafColor != null ? lafColor : fallback;
+		return theme != null ? theme.color(key, base) : base;
+	}
+
+	/** Perceived-luminance test (ITU-R BT.601); below mid-grey counts as a dark background. */
+	private static boolean isDark(Color c) {
+		double luminance = 0.299 * c.getRed() + 0.587 * c.getGreen() + 0.114 * c.getBlue();
+		return luminance < 128;
+	}
+
+	private static Font editorFont(Font baseFont) {
+		return baseFont != null ? baseFont : new Font(Font.MONOSPACED, Font.PLAIN, 13);
+	}
+
+	private static Color blend(Color base, Color overlay, float overlayWeight) {
+		float clamped = Math.max(0f, Math.min(1f, overlayWeight));
+		float baseWeight = 1f - clamped;
+		return new Color(
+				Math.round(base.getRed() * baseWeight + overlay.getRed() * clamped),
+				Math.round(base.getGreen() * baseWeight + overlay.getGreen() * clamped),
+				Math.round(base.getBlue() * baseWeight + overlay.getBlue() * clamped));
+	}
 
 	private String decompile(NuclrResource item) throws Exception {
 		Path tempDir = Files.createTempDirectory("nuclr-jvm-");
