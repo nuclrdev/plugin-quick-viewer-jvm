@@ -49,7 +49,7 @@ Nuclr Commander verifies the RSA-SHA256 signature against `nuclr-cert.pem` on lo
 
 ```text
 src/main/java/dev/nuclr/plugin/core/quick/viewer/jvm/
-├── ClassQuickViewProvider.java   plugin entry point
+├── ClassQuickViewPlugin.java     plugin entry point
 └── ClassQuickViewPanel.java      Swing panel, decompilation, syntax highlighting
 ```
 
