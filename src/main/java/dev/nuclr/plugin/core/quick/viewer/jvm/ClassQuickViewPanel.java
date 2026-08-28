@@ -182,14 +182,11 @@ public class ClassQuickViewPanel extends JPanel {
 	private String decompile(NuclrResource item) throws Exception {
 		Path tempDir = Files.createTempDirectory("nuclr-jvm-");
 		try {
+			// Read through the resource rather than its path: a class file may live in a zip
+			// entry or a remote bucket, where there is no local file to read.
 			byte[] classBytes;
-			Path sourcePath = item.getPath();
-			if (sourcePath != null) {
-				classBytes = Files.readAllBytes(sourcePath);
-			} else {
-				try (var in = Files.newInputStream(item.getPath())) {
-					classBytes = in.readAllBytes();
-				}
+			try (var in = item.openInputStream()) {
+				classBytes = in.readAllBytes();
 			}
 
 			Path tempClass = tempDir.resolve(item.getName());
