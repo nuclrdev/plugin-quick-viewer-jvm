@@ -1,6 +1,8 @@
 package dev.nuclr.plugin.core.quick.viewer.jvm;
 
+import java.awt.image.BufferedImage;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.swing.JComponent;
@@ -85,6 +87,42 @@ public class ClassQuickViewPlugin implements QuickViewNuclrPlugin {
 		currentCancelled = cancelled;
 		panel();
 		return panel.load(resource, cancelled);
+	}
+
+	@Override
+	public boolean supportsThumbnails() {
+		return true;
+	}
+
+	/** The decompiled class as a page of source, starting at its declaration. */
+	@Override
+	public BufferedImage thumbnail(NuclrResource resource, int maxWidth, int maxHeight, AtomicBoolean cancelled) {
+		if (maxWidth <= 0 || maxHeight <= 0 || resource == null || !supports(resource)) {
+			return null;
+		}
+		try {
+			String source = ClassQuickViewPanel.decompile(resource);
+			if (source == null || source.isBlank() || (cancelled != null && cancelled.get())) {
+				return null;
+			}
+			// The banner comment, package and imports are the same on every class; the
+			// declaration is what tells one thumbnail from the next.
+			List<PageThumbnail.Line> lines = source.lines()
+					.dropWhile(ClassQuickViewPlugin::isPreamble)
+					.limit(150)
+					.map(PageThumbnail.Line::mono)
+					.toList();
+			return PageThumbnail.render(lines, maxWidth, maxHeight, cancelled);
+		} catch (Exception e) {
+			log.debug("No thumbnail for {}: {}", resource.getName(), e.toString());
+			return null;
+		}
+	}
+
+	private static boolean isPreamble(String line) {
+		String trimmed = line.strip();
+		return trimmed.isEmpty() || trimmed.startsWith("//") || trimmed.startsWith("/*") || trimmed.startsWith("*")
+				|| trimmed.startsWith("package ") || trimmed.startsWith("import ");
 	}
 
 	@Override

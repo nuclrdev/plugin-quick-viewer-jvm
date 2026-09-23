@@ -179,7 +179,8 @@ public class ClassQuickViewPanel extends JPanel {
 				Math.round(base.getBlue() * baseWeight + overlay.getBlue() * clamped));
 	}
 
-	private String decompile(NuclrResource item) throws Exception {
+	/** Stateless: runs a decompiler of its own in a temp directory of its own. */
+	static String decompile(NuclrResource item) throws Exception {
 		Path tempDir = Files.createTempDirectory("nuclr-jvm-");
 		try {
 			// Read through the resource rather than its path: a class file may live in a zip

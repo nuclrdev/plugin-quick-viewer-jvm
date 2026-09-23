@@ -34,6 +34,12 @@ When a `.class` file is selected, the plugin decompiles it and renders readable 
 5. Theme updates from Nuclr Commander are applied to the viewer automatically.
 6. Temporary decompilation artifacts are cleaned up after each preview.
 
+## 🖼️ Thumbnail
+
+The decompiled class as a page of source, starting at its declaration - the banner comment, package and imports are the same on every class and are skipped.
+
+It implements the platform SDK 6.0.0 thumbnail methods, so plugins that want a picture of a file - attachment chips in AI Projects, for one - get it through Commander.
+
 ## 📥 Installation
 
 Copy the signed plugin archive and detached signature into the Nuclr Commander `plugins/` directory:
@@ -57,7 +63,7 @@ src/main/java/dev/nuclr/plugin/core/quick/viewer/jvm/
 
 | Library | Version | Purpose |
 |---|---|---|
-| `dev.nuclr:platform-sdk` | `3.0.1` | Nuclr platform interfaces |
+| `dev.nuclr:platform-sdk` | `6.0.0` | Nuclr platform interfaces |
 | `vineflower` | `1.11.2` | Java bytecode decompiler |
 | `rsyntaxtextarea` | `3.6.1` | Syntax-highlighted text rendering |
 
