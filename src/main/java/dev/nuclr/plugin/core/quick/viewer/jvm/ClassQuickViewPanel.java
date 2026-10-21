@@ -1,5 +1,7 @@
 package dev.nuclr.plugin.core.quick.viewer.jvm;
 
+import static dev.nuclr.plugin.core.quick.viewer.jvm.Messages.tr;
+
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Font;
@@ -111,14 +113,14 @@ public class ClassQuickViewPanel extends JPanel {
 			content = decompile(item);
 		} catch (Exception e) {
 			log.error("Failed to decompile: {}", item.getName(), e);
-			showMessage("// Decompilation failed: " + e.getMessage(), cancelled);
+			showMessage(tr("decompile.failed", e.getMessage()), cancelled);
 			return true;
 		}
 
 		if (cancelled.get()) return false;
 
 		if (content == null || content.isBlank()) {
-			showMessage("// Decompiler produced no output.", cancelled);
+			showMessage(tr("decompile.empty"), cancelled);
 			return true;
 		}
 

@@ -34,6 +34,7 @@ public class ClassQuickViewPlugin implements QuickViewNuclrPlugin {
 
 	@Override
 	public void preinit(NuclrPluginContext context) {
+		Messages.use(context.getLocale());
 		this.context = context;
 		applyTheme(context.getTheme());
 	}
